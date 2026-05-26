@@ -24,26 +24,6 @@ function App() {
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [visibleSections, setVisibleSections] = useState({
-    addSong: false,
-    search: false,
-    playlist: false,
-    video: false
-  });
-
-  const sectionOptions = [
-    { key: 'addSong', label: 'Aggiungi canzone' },
-    { key: 'search', label: 'Ricerca accordi' },
-    { key: 'playlist', label: 'Playlist' },
-    { key: 'video', label: 'Video embed' }
-  ];
-
-  const toggleSection = (key) => {
-    setVisibleSections((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const selectedSectionCount = Object.values(visibleSections).filter(Boolean).length;
 
   useEffect(() => {
     fetch('/api/tracks')
@@ -146,113 +126,67 @@ function App() {
   return (
     <div className="app-shell">
       <header>
-        <div className="header-inner">
-          <div>
-            <h1>Song Study App</h1>
-            <p>Gestisci link YouTube, modifica l'ordine delle canzoni e cerca accordi su Ultimate Guitar.</p>
-          </div>
-          <div className="menu-container">
-            <button
-              type="button"
-              className={`menu-trigger ${menuOpen ? 'open' : ''}`}
-              aria-haspopup="true"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((open) => !open)}
-            >
-              <span aria-hidden="true">⋯</span>
-            </button>
-            {menuOpen && (
-              <div className="menu-dropdown">
-                <p className="menu-label">Mostra sezioni</p>
-                {sectionOptions.map((option) => (
-                  <button
-                    key={option.key}
-                    type="button"
-                    className={`menu-item ${visibleSections[option.key] ? 'active' : ''}`}
-                    onClick={() => toggleSection(option.key)}
-                  >
-                    <span>{option.label}</span>
-                    <span>{visibleSections[option.key] ? '✓' : ''}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <h1>Song Study App</h1>
+        <p>Gestisci link YouTube, modifica l'ordine delle canzoni e cerca accordi su Ultimate Guitar.</p>
       </header>
 
-      {!selectedSectionCount && (
-        <div className="panel notice info">
-          <p>Apri il menu a tre puntini e seleziona le sezioni da mostrare.</p>
-        </div>
-      )}
+      <section className="grid-layout">
+        <article className="panel">
+          <h2>Aggiungi canzone</h2>
+          <label>
+            Titolo
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Titolo canzone" />
+          </label>
+          <label>
+            Link YouTube
+            <input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://youtube.com/..." />
+          </label>
+          <button onClick={handleAdd}>Aggiungi alla playlist</button>
+          {error && <div className="notice error">{error}</div>}
+        </article>
 
-      {(visibleSections.addSong || visibleSections.search) && (
-        <section className="grid-layout">
-          {visibleSections.addSong && (
-            <article className="panel">
-              <h2>Aggiungi canzone</h2>
-              <label>
-                Titolo
-                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Titolo canzone" />
-              </label>
-              <label>
-                Link YouTube
-                <input value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} placeholder="https://youtube.com/..." />
-              </label>
-              <button onClick={handleAdd}>Aggiungi alla playlist</button>
-              {error && <div className="notice error">{error}</div>}
-            </article>
-          )}
+        <article className="panel">
+          <h2>Ricerca accordi</h2>
+          <label>
+            Titolo o artista
+            <input value={searchText} onChange={(e) => setSearchText(e.target.value)} placeholder="Esempio: Hallelujah" />
+          </label>
+          <a className="primary-link" href={ultimateGuitarLink} target="_blank" rel="noreferrer">
+            Cerca su Ultimate Guitar
+          </a>
+          <p>Apri il sito con il termine di ricerca per trovare testi e accordi.</p>
+        </article>
+      </section>
 
-          {visibleSections.search && (
-            <article className="panel">
-              <h2>Ricerca accordi</h2>
-              <label>
-                Titolo o artista
-                <input value={searchText} onChange={(e) => setSearchText(e.target.value)} placeholder="Esempio: Hallelujah" />
-              </label>
-              <a className="primary-link" href={ultimateGuitarLink} target="_blank" rel="noreferrer">
-                Cerca su Ultimate Guitar
-              </a>
-              <p>Apri il sito con il termine di ricerca per trovare testi e accordi.</p>
-            </article>
-          )}
-        </section>
-      )}
+      <section className="panel">
+        <h2>Playlist</h2>
+        {loading ? (
+          <p>Caricamento...</p>
+        ) : tracks.length === 0 ? (
+          <p>Nessuna canzone salvata.</p>
+        ) : (
+          <div className="track-list">
+            {tracks.map((track, index) => (
+              <TrackRow
+                key={track.id}
+                track={track}
+                index={index}
+                selected={track.id === selectedTrack?.id}
+                onSelect={() => setSelectedId(track.id)}
+                onSave={handleUpdate}
+                onDelete={() => handleDelete(track.id)}
+                onMove={(dir) => moveTrack(index, dir)}
+                canMoveUp={index > 0}
+                canMoveDown={index < tracks.length - 1}
+              />
+            ))}
+          </div>
+        )}
+      </section>
 
-      {visibleSections.playlist && (
-        <section className="panel">
-          <h2>Playlist</h2>
-          {loading ? (
-            <p>Caricamento...</p>
-          ) : tracks.length === 0 ? (
-            <p>Nessuna canzone salvata.</p>
-          ) : (
-            <div className="track-list">
-              {tracks.map((track, index) => (
-                <TrackRow
-                  key={track.id}
-                  track={track}
-                  index={index}
-                  selected={track.id === selectedTrack?.id}
-                  onSelect={() => setSelectedId(track.id)}
-                  onSave={handleUpdate}
-                  onDelete={() => handleDelete(track.id)}
-                  onMove={(dir) => moveTrack(index, dir)}
-                  canMoveUp={index > 0}
-                  canMoveDown={index < tracks.length - 1}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {visibleSections.video && (
-        <section className="panel video-panel">
-          <h2>Video embed</h2>
-          {selectedTrack ? (
+      <section className="panel video-panel">
+        <h2>Video embed</h2>
+        {selectedTrack ? (
           <>
             <div className="video-header">
               <h3>{selectedTrack.title}</h3>

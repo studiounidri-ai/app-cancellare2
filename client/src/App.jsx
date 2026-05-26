@@ -172,9 +172,9 @@ function App() {
   const ultimateGuitarLink = `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(searchText)}`;
 
   const sections = [
-    { id: 'playlist', label: '🎵 Playlist' },
-    { id: 'add', label: '➕ Aggiungi canzone' },
-    { id: 'search', label: '🔍 Ricerca accordi' }
+    { id: 'playlist', label: 'Playlist' },
+    { id: 'add', label: 'Gestione lista: aggiungi/togli canzoni tramite link YouTube' },
+    { id: 'search', label: 'Ricerca su Ultimate Guitar' }
   ];
 
   return (

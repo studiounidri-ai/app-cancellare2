@@ -24,6 +24,15 @@ function App() {
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('playlist');
+
+  const sections = [
+    { id: 'playlist', label: 'Playlist' },
+    { id: 'add', label: 'Aggiungi canzone' },
+    { id: 'search', label: 'Ricerca accordi' },
+    { id: 'video', label: 'Video embed' }
+  ];
 
   useEffect(() => {
     fetch('/api/tracks')
@@ -123,15 +132,43 @@ function App() {
 
   const ultimateGuitarLink = `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(searchText)}`;
 
+  const handleSectionSelect = (sectionId) => {
+    setActiveSection(sectionId);
+    setMenuOpen(false);
+  };
+
   return (
     <div className="app-shell">
       <header>
-        <h1>Song Study App</h1>
-        <p>Gestisci link YouTube, modifica l'ordine delle canzoni e cerca accordi su Ultimate Guitar.</p>
+        <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} title="Menu sezioni">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div>
+          <h1>Song Study App</h1>
+          <p>Gestisci link YouTube, modifica l'ordine delle canzoni e cerca accordi su Ultimate Guitar.</p>
+        </div>
       </header>
 
-      <section className="grid-layout">
-        <article className="panel">
+      {menuOpen && (
+        <nav className="menu-backdrop" onClick={() => setMenuOpen(false)}>
+          <div className="menu-dropdown" onClick={(e) => e.stopPropagation()}>
+            {sections.map((section) => (
+              <button
+                key={section.id}
+                className={`menu-item ${activeSection === section.id ? 'active' : ''}`}
+                onClick={() => handleSectionSelect(section.id)}
+              >
+                {section.label}
+              </button>
+            ))}
+          </div>
+        </nav>
+      )}
+
+      {activeSection === 'add' && (
+        <section className="panel">
           <h2>Aggiungi canzone</h2>
           <label>
             Titolo
@@ -143,9 +180,11 @@ function App() {
           </label>
           <button onClick={handleAdd}>Aggiungi alla playlist</button>
           {error && <div className="notice error">{error}</div>}
-        </article>
+        </section>
+      )}
 
-        <article className="panel">
+      {activeSection === 'search' && (
+        <section className="panel">
           <h2>Ricerca accordi</h2>
           <label>
             Titolo o artista
@@ -155,36 +194,38 @@ function App() {
             Cerca su Ultimate Guitar
           </a>
           <p>Apri il sito con il termine di ricerca per trovare testi e accordi.</p>
-        </article>
-      </section>
+        </section>
+      )}
 
-      <section className="panel">
-        <h2>Playlist</h2>
-        {loading ? (
-          <p>Caricamento...</p>
-        ) : tracks.length === 0 ? (
-          <p>Nessuna canzone salvata.</p>
-        ) : (
-          <div className="track-list">
-            {tracks.map((track, index) => (
-              <TrackRow
-                key={track.id}
-                track={track}
-                index={index}
-                selected={track.id === selectedTrack?.id}
-                onSelect={() => setSelectedId(track.id)}
-                onSave={handleUpdate}
-                onDelete={() => handleDelete(track.id)}
-                onMove={(dir) => moveTrack(index, dir)}
-                canMoveUp={index > 0}
-                canMoveDown={index < tracks.length - 1}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+      {activeSection === 'playlist' && (
+        <section className="panel">
+          <h2>Playlist</h2>
+          {loading ? (
+            <p>Caricamento...</p>
+          ) : tracks.length === 0 ? (
+            <p>Nessuna canzone salvata.</p>
+          ) : (
+            <div className="track-list">
+              {tracks.map((track, index) => (
+                <TrackRow
+                  key={track.id}
+                  track={track}
+                  index={index}
+                  selected={track.id === selectedTrack?.id}
+                  onSelect={() => setSelectedId(track.id)}
+                  onSave={handleUpdate}
+                  onDelete={() => handleDelete(track.id)}
+                  onMove={(dir) => moveTrack(index, dir)}
+                  canMoveUp={index > 0}
+                  canMoveDown={index < tracks.length - 1}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
-      <section className="panel video-panel">
+      {activeSection === 'video' && (
         <h2>Video embed</h2>
         {selectedTrack ? (
           <>
